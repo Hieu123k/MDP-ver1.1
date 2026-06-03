@@ -36,3 +36,7 @@ Thumbs.db
 .env.test
 _login.json
 _empty.json
+
+# Persistent .65 deploy runtime artifacts
+.env.prod65
+mdp65_admin.txt
