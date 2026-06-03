@@ -1,0 +1,88 @@
+# MDP-ver1.1 — Phase B SMOKE TEST on .65 (Docker Desktop). Caddy publishes :8456 ONLY
+# (coexists with old MDP on 80/443, ora2pg, postgres-5434). Isolated: -p mdptest, mdptest_* volumes.
+#   docker compose -f docker-compose.test.yml --env-file .env.test -p mdptest up -d --build
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    env_file:
+      - path: .env.test
+        required: false
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      DATABASE_URL: ${DATABASE_URL}
+      CORS_ORIGINS: '["https://localhost:8456"]'
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
+      CONNECTION_SECRET_KEY: ${CONNECTION_SECRET_KEY}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)\"",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ""
+    depends_on:
+      backend:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://localhost:3000').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\"",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  reverse-proxy:
+    image: caddy:2
+    ports:
+      - "8456:8456" # ONLY published port for the test stack
+    volumes:
+      - ./deploy/Caddyfile.test:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_started
+      frontend:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

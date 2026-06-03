@@ -31,3 +31,8 @@ backups/*.gz
 # OS
 .DS_Store
 Thumbs.db
+
+# Phase B test runtime artifacts
+.env.test
+_login.json
+_empty.json
