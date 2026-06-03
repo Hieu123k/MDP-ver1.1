@@ -53,4 +53,4 @@ foreach ($p in "/", "/login", "/migration-jobs", "/jde-demo") {
   Write-Host ("page     $p -> $c")
 }
 Remove-Item "_login.json", "_empty.json" -ErrorAction SilentlyContinue
-Write-Host "### DONE. Stack left running on https://localhost:8456 — clean with scripts\phaseb_down.ps1 ###"
+Write-Host "### DONE. Stack left running on https://localhost:8456 - clean with scripts\phaseb_down.ps1 ###"

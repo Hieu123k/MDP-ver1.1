@@ -63,4 +63,4 @@ if ($adminId) {
 }
 else { Write-Host "admin    rotate -> SKIP (no admin id)" }
 Remove-Item "_login.json", "_empty.json" -ErrorAction SilentlyContinue
-Write-Host "### DONE — MDP PERSISTENT on https://localhost:8456 (-p mdp65, restart=unless-stopped). Admin password in mdp65_admin.txt ###"
+Write-Host "### DONE: MDP PERSISTENT on https://localhost:8456 (project mdp65, restart unless-stopped). Admin password in mdp65_admin.txt ###"
